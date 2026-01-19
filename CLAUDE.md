@@ -23,6 +23,14 @@ Do NOT add features that:
 
 The TUI should only observe and report on queue state, never modify it.
 
+## Git Workflow
+
+- Use conventional commits: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, etc.
+- Use conventional branch names: `feat/description`, `fix/description`, `refactor/description`
+- Keep commit messages concise - summarize the "why" not the "what"
+- Keep PR descriptions short
+- Make multiple commits if changes span different concerns
+
 ## Development
 
 Default to using Bun instead of Node.js.
