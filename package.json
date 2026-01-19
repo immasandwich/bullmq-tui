@@ -8,12 +8,15 @@
   },
   "scripts": {
     "start": "bun run src/index.tsx",
-    "dev": "bun --watch run src/index.tsx"
+    "dev": "bun --watch run src/index.tsx",
+    "build": "bun run scripts/build.ts",
+    "build:all": "bun run scripts/build.ts --all"
   },
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/react": "^19.2.8"
+    "@types/react": "^19.2.8",
+    "react-devtools-core": "^7.0.1"
   },
   "peerDependencies": {
     "typescript": "^5"
