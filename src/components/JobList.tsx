@@ -44,7 +44,7 @@ export function JobList() {
   } = useStore();
 
   const [lastKey, setLastKey] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadingFilter, setLoadingFilter] = useState<string | null>(jobStatusFilter);
   const { rows } = useTerminalSize();
   const viewportSize = getListViewportSize(rows, 10);
 
@@ -67,14 +67,18 @@ export function JobList() {
 
   const queueInfo = selectedQueue ? queues.get(selectedQueue) : null;
 
+  // Reset cursor when filter or queue changes
   useEffect(() => {
     setCursor(0);
-    setIsLoading(false);
-  }, [jobs, jobStatusFilter]);
-
-  useEffect(() => {
-    setIsLoading(true);
+    setLoadingFilter(jobStatusFilter);
   }, [jobStatusFilter, selectedQueue]);
+
+  // Mark loading complete when jobs arrive for current filter
+  useEffect(() => {
+    if (loadingFilter === jobStatusFilter) {
+      setLoadingFilter(null);
+    }
+  }, [jobs]);
 
   useInput(
     (input, key) => {
@@ -159,7 +163,7 @@ export function JobList() {
       </Box>
 
       {/* Loading */}
-      {isLoading && connectionStatus === "connected" && (
+      {loadingFilter && connectionStatus === "connected" && (
         <Box paddingLeft={1}>
           <Text color="magenta">
             <Spinner type="dots" />
@@ -169,14 +173,14 @@ export function JobList() {
       )}
 
       {/* Empty */}
-      {!isLoading && jobs.length === 0 && (
+      {!loadingFilter && jobs.length === 0 && (
         <Box paddingLeft={1}>
           <Text color="gray">No {jobStatusFilter} jobs in this queue</Text>
         </Box>
       )}
 
       {/* Job list */}
-      {!isLoading && jobs.length > 0 && (
+      {!loadingFilter && jobs.length > 0 && (
         <>
           {/* Headers */}
           <Box marginBottom={1} paddingLeft={1}>
