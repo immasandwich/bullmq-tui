@@ -172,17 +172,14 @@ export function QueueList() {
       )}
 
       {/* Column headers */}
-      <Box marginBottom={0} paddingLeft={1}>
-        <Text color="white" bold>
+      <Box marginBottom={1} paddingLeft={1}>
+        <Text backgroundColor="gray" color="white" bold>
           {"  "}{"Name".padEnd(maxNameLen + 2)}
           {"Active".padStart(8)}
           {"Wait".padStart(8)}
           {"Fail".padStart(8)}
-          {"Done".padStart(10)}
+          {"Done".padStart(10)}{"  "}
         </Text>
-      </Box>
-      <Box marginBottom={1} paddingLeft={1}>
-        <Text color="magenta">{"─".repeat(maxNameLen + 40)}</Text>
       </Box>
 
       {/* Scroll up indicator */}

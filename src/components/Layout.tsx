@@ -136,11 +136,7 @@ export function Layout({ children }: LayoutProps) {
       <Box 
         paddingX={1} 
         justifyContent="space-between"
-        borderStyle="single"
-        borderColor="magenta"
-        borderTop={false}
-        borderLeft={false}
-        borderRight={false}
+        marginBottom={1}
       >
         <Box>
           {breadcrumb}
@@ -165,30 +161,16 @@ export function Layout({ children }: LayoutProps) {
         </Box>
       </Box>
 
-      {/* Main content area with left accent border */}
-      <Box flexGrow={1} flexDirection="row">
-        {/* Left accent */}
-        <Box width={1} flexDirection="column">
-          {Array.from({ length: rows - 2 }, (_, i) => (
-            <Text key={`border-${i}`} color="magenta">│</Text>
-          ))}
-        </Box>
-        
-        {/* Content */}
-        <Box flexGrow={1} flexDirection="column" paddingLeft={1}>
-          {children}
-        </Box>
+      {/* Main content area */}
+      <Box flexGrow={1} flexDirection="column" paddingX={1}>
+        {children}
       </Box>
 
       {/* Bottom bar - help and status */}
       <Box 
         paddingX={1} 
         justifyContent="space-between"
-        borderStyle="single"
-        borderColor="magenta"
-        borderBottom={false}
-        borderLeft={false}
-        borderRight={false}
+        marginTop={1}
       >
         <Box>{helpText}</Box>
         {statusText}

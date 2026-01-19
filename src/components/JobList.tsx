@@ -130,29 +130,29 @@ export function JobList() {
 
   return (
     <Box flexDirection="column">
-      {/* Status tabs - pill style */}
-      <Box marginBottom={1} gap={1}>
-        {STATUS_TABS.map((tab) => {
+      {/* Status tabs */}
+      <Box marginBottom={1}>
+        {STATUS_TABS.map((tab, index) => {
           const isActive = tab.id === jobStatusFilter;
           const count = queueInfo?.counts?.[tab.id] ?? 0;
           const hasItems = count > 0;
-
-          if (isActive) {
-            return (
-              <Box key={tab.id}>
-                <Text backgroundColor={tab.color} color="black" bold>
-                  {` ${tab.label} ${count} `}
-                </Text>
-              </Box>
-            );
-          }
+          const isLast = index === STATUS_TABS.length - 1;
 
           return (
             <Box key={tab.id}>
-              <Text color={hasItems ? tab.color : "gray"} bold={hasItems}>
-                {tab.label}
-              </Text>
-              {hasItems && <Text color="white"> {count}</Text>}
+              {isActive ? (
+                <Text backgroundColor={tab.color} color="black" bold>
+                  {` ${tab.label} ${count} `}
+                </Text>
+              ) : (
+                <>
+                  <Text color={hasItems ? tab.color : "gray"} bold={hasItems}>
+                    {tab.label}
+                  </Text>
+                  {hasItems && <Text color="white"> {count}</Text>}
+                </>
+              )}
+              {!isLast && <Text color="gray"> · </Text>}
             </Box>
           );
         })}
@@ -179,13 +179,10 @@ export function JobList() {
       {!isLoading && jobs.length > 0 && (
         <>
           {/* Headers */}
-          <Box marginBottom={0} paddingLeft={1}>
-            <Text color="white" bold>
-              {"   "}{"ID".padEnd(14)}{"Name".padEnd(22)}{"Progress".padEnd(10)}{"Age".padEnd(8)}
-            </Text>
-          </Box>
           <Box marginBottom={1} paddingLeft={1}>
-            <Text color="magenta">{"─".repeat(58)}</Text>
+            <Text backgroundColor="gray" color="white" bold>
+              {"   "}{"ID".padEnd(14)}{"Name".padEnd(22)}{"Progress".padEnd(10)}{"Age".padEnd(8)}{"  "}
+            </Text>
           </Box>
 
           {/* Scroll up */}

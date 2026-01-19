@@ -77,33 +77,33 @@ export function JobDetail() {
 
   return (
     <Box flexDirection="column">
-      {/* Tabs - pill style matching JobList */}
-      <Box marginBottom={1} gap={1}>
-        {TABS.map((tab) => {
+      {/* Tabs */}
+      <Box marginBottom={1}>
+        {TABS.map((tab, index) => {
           const isActive = tab.id === activeTab;
           const tabColor = 
             tab.id === "error" && hasError ? "red" : 
             tab.id === "result" && hasResult ? "green" : 
             "magenta";
+          const showIndicator = (tab.id === "error" && hasError) || (tab.id === "result" && hasResult);
+          const isLast = index === TABS.length - 1;
 
-          if (isActive) {
-            return (
-              <Box key={tab.id}>
+          return (
+            <Box key={tab.id}>
+              {isActive ? (
                 <Text backgroundColor={tabColor} color="white" bold>
                   {` ${tab.label} `}
                 </Text>
-              </Box>
-            );
-          }
-
-          const showIndicator = (tab.id === "error" && hasError) || (tab.id === "result" && hasResult);
-          return (
-            <Box key={tab.id}>
-              <Text color={showIndicator ? tabColor : "gray"} bold={showIndicator}>
-                {tab.label}
-              </Text>
-              {tab.id === "error" && hasError && <Text color="red" bold> !</Text>}
-              {tab.id === "result" && hasResult && <Text color="green" bold> *</Text>}
+              ) : (
+                <>
+                  <Text color={showIndicator ? tabColor : "gray"} bold={showIndicator}>
+                    {tab.label}
+                  </Text>
+                  {tab.id === "error" && hasError && <Text color="red" bold> !</Text>}
+                  {tab.id === "result" && hasResult && <Text color="green" bold> *</Text>}
+                </>
+              )}
+              {!isLast && <Text color="gray"> · </Text>}
             </Box>
           );
         })}
