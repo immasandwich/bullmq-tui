@@ -27,13 +27,12 @@ export function Layout({ children }: LayoutProps) {
 
   const totalJobs = totals.active + totals.waiting + totals.failed + totals.completed;
 
-  // Breadcrumb based on current view
-  const breadcrumb = (() => {
-    const filteredCount = queueFilter 
-      ? queueNames.filter(n => n.toLowerCase().includes(queueFilter.toLowerCase())).length
-      : queueNames.length;
-
+  // Title based on current view
+  const title = (() => {
     if (view === "queues") {
+      const filteredCount = queueFilter 
+        ? queueNames.filter(n => n.toLowerCase().includes(queueFilter.toLowerCase())).length
+        : queueNames.length;
       return (
         <>
           <Text color="magenta" bold>Queues</Text>
@@ -46,17 +45,20 @@ export function Layout({ children }: LayoutProps) {
       const queueInfo = queues.get(selectedQueue);
       return (
         <>
-          <Text color="white">Queues / </Text>
           <Text color="magenta" bold>{selectedQueue}</Text>
           {queueInfo?.isPaused && <Text color="yellow" bold> (paused)</Text>}
         </>
       );
     }
-    if (view === "job-detail" && selectedQueue && selectedJob) {
+    if (view === "job-detail" && selectedJob) {
+      const jobId = selectedJob.id;
+      const maxIdLen = 20;
+      const displayId = jobId.length > maxIdLen
+        ? `${jobId.slice(0, 8)}...${jobId.slice(-8)}`
+        : jobId;
       return (
         <>
-          <Text color="white">Queues / {selectedQueue} / </Text>
-          <Text color="magenta" bold>#{selectedJob.id}</Text>
+          <Text color="magenta" bold>#{displayId}</Text>
           {selectedJob.name && selectedJob.name !== "default" && (
             <Text color="cyan"> ({selectedJob.name})</Text>
           )}
@@ -99,7 +101,7 @@ export function Layout({ children }: LayoutProps) {
           <Text color="gray">  </Text>
           <Text color="magenta" bold>/</Text><Text color="white"> filter</Text>
           <Text color="gray">  </Text>
-          <Text color="magenta" bold>enter</Text><Text color="white"> open</Text>
+          <Text color="magenta" bold>l/enter</Text><Text color="white"> open</Text>
           <Text color="gray">  </Text>
           <Text color="magenta" bold>q</Text><Text color="white"> quit</Text>
         </>
@@ -112,7 +114,7 @@ export function Layout({ children }: LayoutProps) {
           <Text color="gray">  </Text>
           <Text color="magenta" bold>H/L</Text><Text color="white"> status</Text>
           <Text color="gray">  </Text>
-          <Text color="magenta" bold>enter</Text><Text color="white"> view</Text>
+          <Text color="magenta" bold>l/enter</Text><Text color="white"> view</Text>
           <Text color="gray">  </Text>
           <Text color="magenta" bold>h</Text><Text color="white"> back</Text>
         </>
@@ -139,7 +141,7 @@ export function Layout({ children }: LayoutProps) {
         marginBottom={1}
       >
         <Box>
-          {breadcrumb}
+          {title}
         </Box>
         <Box gap={2}>
           <Text>
