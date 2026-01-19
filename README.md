@@ -5,10 +5,14 @@ A read-only terminal UI for monitoring BullMQ queues.
 ## Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/immasandwich/bullmq-tui/main/install.sh | sh
+npm install -g bullmq-tui
 ```
 
-Or download a binary directly from [releases](https://github.com/immasandwich/bullmq-tui/releases).
+Or with bun:
+
+```bash
+bun install -g bullmq-tui
+```
 
 ## Usage
 
@@ -38,16 +42,6 @@ bullmq-tui
 ```bash
 bun install
 bun run dev
-```
-
-## Building
-
-```bash
-# Build for current platform
-bun run build
-
-# Build for all platforms
-bun run build:all
 ```
 
 ## License

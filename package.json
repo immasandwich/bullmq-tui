@@ -1,18 +1,40 @@
 {
   "name": "bullmq-tui",
   "version": "0.1.0",
-  "module": "src/index.tsx",
+  "description": "A read-only terminal UI for monitoring BullMQ queues",
   "type": "module",
   "bin": {
     "bullmq-tui": "./src/index.tsx"
   },
   "scripts": {
     "start": "bun run src/index.tsx",
-    "dev": "bun --watch run src/index.tsx",
-    "build": "bun run scripts/build.ts",
-    "build:all": "bun run scripts/build.ts --all"
+    "dev": "bun --watch run src/index.tsx"
   },
-  "private": true,
+  "keywords": [
+    "bullmq",
+    "queue",
+    "redis",
+    "tui",
+    "terminal",
+    "cli",
+    "monitor"
+  ],
+  "author": "immasandwich",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/immasandwich/bullmq-tui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/immasandwich/bullmq-tui/issues"
+  },
+  "homepage": "https://github.com/immasandwich/bullmq-tui#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "src"
+  ],
   "devDependencies": {
     "@types/bun": "latest",
     "@types/react": "^19.2.8",
