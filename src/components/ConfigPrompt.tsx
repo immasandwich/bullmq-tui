@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Text, useInput } from "ink";
+import { Box, Text } from "ink";
 import TextInput from "ink-text-input";
 
 export interface ConfigAnswers {
@@ -16,7 +16,7 @@ interface ConfigPromptProps {
   onComplete: (answers: ConfigAnswers) => void;
 }
 
-type Step = "host" | "port" | "password" | "confirm";
+type Step = "host" | "port" | "password";
 
 export function ConfigPrompt({ defaults, onComplete }: ConfigPromptProps) {
   const [step, setStep] = useState<Step>("host");
@@ -32,24 +32,14 @@ export function ConfigPrompt({ defaults, onComplete }: ConfigPromptProps) {
       setPort(value || "6379");
       setStep("password");
     } else if (step === "password") {
-      setPassword(value);
-      setStep("confirm");
+      onComplete({
+        host: host || "localhost",
+        port: parseInt(port, 10) || 6379,
+        password: value || undefined,
+      });
     }
   };
 
-  useInput((input, key) => {
-    if (step === "confirm") {
-      if (input === "y" || key.return) {
-        onComplete({
-          host: host || "localhost",
-          port: parseInt(port, 10) || 6379,
-          password: password || undefined,
-        });
-      } else if (input === "n") {
-        setStep("host");
-      }
-    }
-  });
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -75,7 +65,7 @@ export function ConfigPrompt({ defaults, onComplete }: ConfigPromptProps) {
       </Box>
 
       {/* Port */}
-      {(step === "port" || step === "password" || step === "confirm") && (
+      {(step === "port" || step === "password") && (
         <Box>
           <Text>Redis Port: </Text>
           {step === "port" ? (
@@ -92,32 +82,16 @@ export function ConfigPrompt({ defaults, onComplete }: ConfigPromptProps) {
       )}
 
       {/* Password */}
-      {(step === "password" || step === "confirm") && (
+      {step === "password" && (
         <Box>
           <Text>Redis Password: </Text>
-          {step === "password" ? (
-            <TextInput
-              value={password}
-              onChange={setPassword}
-              onSubmit={handleSubmit}
-              placeholder="(empty for none)"
-              mask="*"
-            />
-          ) : (
-            <Text color="green">{password ? "********" : "(none)"}</Text>
-          )}
-        </Box>
-      )}
-
-      {/* Confirm */}
-      {step === "confirm" && (
-        <Box marginTop={1} flexDirection="column">
-          <Text>
-            Connect to <Text color="cyan">{host || "localhost"}:{port || "6379"}</Text>?
-          </Text>
-          <Text dimColor>
-            Press <Text color="green">Y</Text> to connect, <Text color="yellow">N</Text> to edit
-          </Text>
+          <TextInput
+            value={password}
+            onChange={setPassword}
+            onSubmit={handleSubmit}
+            placeholder="(empty for none)"
+            mask="*"
+          />
         </Box>
       )}
     </Box>
