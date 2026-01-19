@@ -21,16 +21,43 @@ export class RedisAdapter {
   }
 
   async connect(): Promise<void> {
-    this.redis = new Redis({
-      host: this.config.host,
-      port: this.config.port,
-      password: this.config.password,
-      db: this.config.db,
-      maxRetriesPerRequest: null,
-    });
+    const CONNECTION_TIMEOUT = 5000; // 5 seconds
 
-    // Test connection
-    await this.redis.ping();
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        if (this.redis) {
+          this.redis.disconnect();
+          this.redis = null;
+        }
+        reject(new Error(`Connection timeout: could not connect to ${this.config.host}:${this.config.port} within ${CONNECTION_TIMEOUT / 1000}s`));
+      }, CONNECTION_TIMEOUT);
+
+      this.redis = new Redis({
+        host: this.config.host,
+        port: this.config.port,
+        password: this.config.password,
+        db: this.config.db,
+        maxRetriesPerRequest: null,
+        retryStrategy: () => null, // Don't retry, fail fast
+        lazyConnect: true,
+      });
+
+      this.redis.on("error", (err) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+
+      this.redis.connect()
+        .then(() => this.redis!.ping())
+        .then(() => {
+          clearTimeout(timeoutId);
+          resolve();
+        })
+        .catch((err) => {
+          clearTimeout(timeoutId);
+          reject(err);
+        });
+    });
   }
 
   async disconnect(): Promise<void> {
