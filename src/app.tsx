@@ -31,8 +31,17 @@ export function App({ config }: AppProps) {
     handleQueueEvent,
   } = useStore();
 
-  // Initialize adapter and connect
-  useEffect(() => {
+  // Connect to Redis
+  const connect = useCallback(async () => {
+    // Clean up existing adapter if retrying
+    if (adapterRef.current) {
+      try {
+        await adapterRef.current.disconnect();
+      } catch {
+        // Ignore disconnect errors
+      }
+    }
+
     const adapter = new RedisAdapter({
       host: config.redis.host,
       port: config.redis.port,
@@ -42,38 +51,39 @@ export function App({ config }: AppProps) {
     adapterRef.current = adapter;
     setGlobalAdapter(adapter);
 
-    async function connect() {
-      setConnectionStatus("connecting");
-      try {
-        await adapter.connect();
-        setConnectionStatus("connected");
+    setConnectionStatus("connecting");
+    try {
+      await adapter.connect();
+      setConnectionStatus("connected");
 
-        // Discover queues
-        const names = await adapter.discoverQueues();
-        setQueueNames(names);
+      // Discover queues
+      const names = await adapter.discoverQueues();
+      setQueueNames(names);
 
-        // Get initial queue info
-        if (names.length > 0) {
-          const infos = await adapter.getAllQueuesInfo(names);
-          updateQueues(infos);
-        }
-
-        // Subscribe to events for all queues
-        for (const name of names) {
-          adapter.subscribeToQueue(name, handleQueueEvent);
-        }
-      } catch (err) {
-        setConnectionStatus("error", err instanceof Error ? err.message : String(err));
+      // Get initial queue info
+      if (names.length > 0) {
+        const infos = await adapter.getAllQueuesInfo(names);
+        updateQueues(infos);
       }
-    }
 
+      // Subscribe to events for all queues
+      for (const name of names) {
+        adapter.subscribeToQueue(name, handleQueueEvent);
+      }
+    } catch (err) {
+      setConnectionStatus("error", err instanceof Error ? err.message : String(err));
+    }
+  }, [config, setConnectionStatus, setQueueNames, updateQueues, handleQueueEvent]);
+
+  // Initial connection
+  useEffect(() => {
     connect();
 
     return () => {
       // Disconnect is awaited in index.tsx after waitUntilExit()
       setGlobalAdapter(null);
     };
-  }, [config]);
+  }, [connect]);
 
   // Refresh queue counts periodically
   useEffect(() => {
@@ -140,6 +150,12 @@ export function App({ config }: AppProps) {
   useInput((input, key) => {
     // Don't intercept when in filter input mode
     if (isFilteringQueues) return;
+
+    // Retry connection on Enter when in error state
+    if (connectionStatus === "error" && key.return) {
+      connect();
+      return;
+    }
 
     if (input === "q" && !key.ctrl && view === "queues") {
       exit();

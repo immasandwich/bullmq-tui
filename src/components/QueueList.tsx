@@ -122,11 +122,23 @@ export function QueueList() {
   }
 
   if (connectionStatus === "error") {
+    const { connectionError } = useStore.getState();
     return (
       <Box flexDirection="column">
-        <Box paddingLeft={1}>
+        <Box paddingLeft={1} flexDirection="column">
           <Text color="red" bold>Connection failed</Text>
-          <Text color="white"> - check your Redis settings</Text>
+          {connectionError && (
+            <Box marginTop={1}>
+              <Text color="gray">{connectionError}</Text>
+            </Box>
+          )}
+          <Box marginTop={1}>
+            <Text color="white">Press </Text>
+            <Text color="magenta" bold>enter</Text>
+            <Text color="white"> to retry or </Text>
+            <Text color="magenta" bold>q</Text>
+            <Text color="white"> to quit</Text>
+          </Box>
         </Box>
       </Box>
     );
