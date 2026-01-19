@@ -1,7 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Box, Text, useInput } from "ink";
+import { spawn } from "bun";
 import { useStore } from "../store/index.ts";
 import { useTerminalSize, getListViewportSize } from "../hooks/useTerminalSize.ts";
+
+// Copy to clipboard using system command
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    const cmd = process.platform === "darwin" ? "pbcopy" : "xclip";
+    const args = process.platform === "darwin" ? [] : ["-selection", "clipboard"];
+    const proc = spawn([cmd, ...args], { stdin: "pipe" });
+    proc.stdin.write(text);
+    proc.stdin.end();
+    await proc.exited;
+    return proc.exitCode === 0;
+  } catch {
+    return false;
+  }
+}
 
 type Tab = "info" | "data" | "error" | "result";
 
@@ -20,6 +36,10 @@ function formatJson(data: unknown, indent = 2): string {
   }
 }
 
+function splitLines(text: string): string[] {
+  return text.split("\n");
+}
+
 function formatDate(ts?: number): string {
   if (!ts) return "-";
   return new Date(ts).toISOString();
@@ -34,10 +54,61 @@ function formatDuration(start?: number, end?: number): string {
 }
 
 export function JobDetail() {
-  const { selectedJob, selectJob, view, selectedQueue } = useStore();
+  const { selectedJob, selectJob, view } = useStore();
   const [activeTab, setActiveTab] = useState<Tab>("info");
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const { rows } = useTerminalSize();
-  const contentHeight = getListViewportSize(rows, 10);
+  const contentHeight = getListViewportSize(rows, 12);
+
+  // Get raw content for copying
+  const rawContent = useMemo(() => {
+    if (!selectedJob) return "";
+    if (activeTab === "data") {
+      return formatJson(selectedJob.data);
+    }
+    if (activeTab === "result" && selectedJob.returnvalue !== undefined) {
+      return formatJson(selectedJob.returnvalue);
+    }
+    if (activeTab === "error") {
+      const parts: string[] = [];
+      if (selectedJob.failedReason) {
+        parts.push(selectedJob.failedReason);
+      }
+      if (selectedJob.stacktrace && selectedJob.stacktrace.length > 0) {
+        parts.push(...selectedJob.stacktrace);
+      }
+      return parts.join("\n");
+    }
+    return "";
+  }, [selectedJob, activeTab]);
+
+  // Get content lines for display
+  const contentLines = useMemo(() => {
+    if (!selectedJob) return [];
+    if (activeTab === "data") {
+      return splitLines(formatJson(selectedJob.data));
+    }
+    if (activeTab === "result" && selectedJob.returnvalue !== undefined) {
+      return splitLines(formatJson(selectedJob.returnvalue));
+    }
+    if (activeTab === "error") {
+      const lines: string[] = [];
+      if (selectedJob.failedReason) {
+        lines.push("Error:", selectedJob.failedReason, "");
+      }
+      if (selectedJob.stacktrace && selectedJob.stacktrace.length > 0) {
+        lines.push("Stacktrace:");
+        lines.push(...selectedJob.stacktrace);
+      }
+      return lines;
+    }
+    return [];
+  }, [selectedJob, activeTab]);
+
+  // Reset scroll when changing tabs
+  const handleTabChange = (newTab: Tab) => {
+    setActiveTab(newTab);
+  };
 
   useInput(
     (input, key) => {
@@ -47,10 +118,15 @@ export function JobDetail() {
         selectJob(null);
       } else if (input === "H" || (key.shift && key.tab)) {
         const idx = TABS.findIndex((t) => t.id === activeTab);
-        setActiveTab(TABS[(idx - 1 + TABS.length) % TABS.length]!.id);
+        handleTabChange(TABS[(idx - 1 + TABS.length) % TABS.length]!.id);
       } else if (input === "L" || key.tab) {
         const idx = TABS.findIndex((t) => t.id === activeTab);
-        setActiveTab(TABS[(idx + 1) % TABS.length]!.id);
+        handleTabChange(TABS[(idx + 1) % TABS.length]!.id);
+      } else if (input === "y" && activeTab !== "info" && rawContent) {
+        copyToClipboard(rawContent).then((success) => {
+          setCopyStatus(success ? "copied" : "failed");
+          setTimeout(() => setCopyStatus("idle"), 2000);
+        });
       }
     },
     { isActive: view === "job-detail" }
@@ -78,35 +154,39 @@ export function JobDetail() {
   return (
     <Box flexDirection="column">
       {/* Tabs */}
-      <Box marginBottom={1}>
-        {TABS.map((tab, index) => {
-          const isActive = tab.id === activeTab;
-          const tabColor = 
-            tab.id === "error" && hasError ? "red" : 
-            tab.id === "result" && hasResult ? "green" : 
-            "magenta";
-          const showIndicator = (tab.id === "error" && hasError) || (tab.id === "result" && hasResult);
-          const isLast = index === TABS.length - 1;
+      <Box marginBottom={1} justifyContent="space-between">
+        <Box>
+          {TABS.map((tab, index) => {
+            const isActive = tab.id === activeTab;
+            const tabColor = 
+              tab.id === "error" && hasError ? "red" : 
+              tab.id === "result" && hasResult ? "green" : 
+              "magenta";
+            const showIndicator = (tab.id === "error" && hasError) || (tab.id === "result" && hasResult);
+            const isLast = index === TABS.length - 1;
 
-          return (
-            <Box key={tab.id}>
-              {isActive ? (
-                <Text backgroundColor={tabColor} color="white" bold>
-                  {` ${tab.label} `}
-                </Text>
-              ) : (
-                <>
-                  <Text color={showIndicator ? tabColor : "gray"} bold={showIndicator}>
-                    {tab.label}
+            return (
+              <Box key={tab.id}>
+                {isActive ? (
+                  <Text backgroundColor={tabColor} color="white" bold>
+                    {` ${tab.label} `}
                   </Text>
-                  {tab.id === "error" && hasError && <Text color="red" bold> !</Text>}
-                  {tab.id === "result" && hasResult && <Text color="green" bold> *</Text>}
-                </>
-              )}
-              {!isLast && <Text color="gray"> · </Text>}
-            </Box>
-          );
-        })}
+                ) : (
+                  <>
+                    <Text color={showIndicator ? tabColor : "gray"} bold={showIndicator}>
+                      {tab.label}
+                    </Text>
+                    {tab.id === "error" && hasError && <Text color="red" bold> !</Text>}
+                    {tab.id === "result" && hasResult && <Text color="green" bold> *</Text>}
+                  </>
+                )}
+                {!isLast && <Text color="gray"> · </Text>}
+              </Box>
+            );
+          })}
+        </Box>
+        {copyStatus === "copied" && <Text color="green">Copied!</Text>}
+        {copyStatus === "failed" && <Text color="red">Copy failed</Text>}
       </Box>
 
       {/* Content */}
@@ -156,43 +236,47 @@ export function JobDetail() {
 
         {activeTab === "data" && (
           <Box flexDirection="column">
-            <Text wrap="wrap" color="cyan">{formatJson(data)}</Text>
+            {contentLines.length === 0 ? (
+              <Text color="gray">No data</Text>
+            ) : (
+              contentLines.slice(0, contentHeight).map((line, i) => (
+                <Text key={i} color="cyan" wrap="truncate-end">{line}</Text>
+              ))
+            )}
           </Box>
         )}
 
         {activeTab === "error" && (
           <Box flexDirection="column">
-            {failedReason ? (
-              <>
-                <Box marginBottom={1}>
-                  <Text color="red" bold>Error</Text>
-                </Box>
-                <Box marginBottom={1}>
-                  <Text color="red">{failedReason}</Text>
-                </Box>
-                {stacktrace && stacktrace.length > 0 && (
-                  <>
-                    <Box marginBottom={1}>
-                      <Text color="yellow" bold>Stacktrace</Text>
-                    </Box>
-                    {stacktrace.slice(0, contentHeight - 6).map((line, i) => (
-                      <Text key={i} color="gray" wrap="truncate-end">{line}</Text>
-                    ))}
-                  </>
-                )}
-              </>
-            ) : (
+            {!hasError ? (
               <Text color="gray">No error information available</Text>
+            ) : (
+              contentLines.slice(0, contentHeight).map((line, i) => {
+                const isErrorLabel = line === "Error:";
+                const isStacktraceLabel = line === "Stacktrace:";
+                return (
+                  <Text
+                    key={i}
+                    color={isErrorLabel ? "red" : isStacktraceLabel ? "yellow" : "gray"}
+                    bold={isErrorLabel || isStacktraceLabel}
+                    wrap="truncate-end"
+                  >
+                    {line}
+                  </Text>
+                );
+              })
             )}
           </Box>
         )}
 
         {activeTab === "result" && (
           <Box flexDirection="column">
-            {hasResult ? (
-              <Text color="green" bold wrap="wrap">{formatJson(returnvalue)}</Text>
-            ) : (
+            {!hasResult ? (
               <Text color="gray">No return value</Text>
+            ) : (
+              contentLines.slice(0, contentHeight).map((line, i) => (
+                <Text key={i} color="green" wrap="truncate-end">{line}</Text>
+              ))
             )}
           </Box>
         )}

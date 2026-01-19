@@ -125,6 +125,8 @@ export function Layout({ children }: LayoutProps) {
         <>
           <Text color="magenta" bold>H/L</Text><Text color="white"> tabs</Text>
           <Text color="gray">  </Text>
+          <Text color="magenta" bold>y</Text><Text color="white"> copy</Text>
+          <Text color="gray">  </Text>
           <Text color="magenta" bold>h</Text><Text color="white"> back</Text>
         </>
       );
